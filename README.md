@@ -75,7 +75,7 @@ func main() {
     return
   }
 
-  // Check is the sensor has data and read it every 2 seconds
+  // Check is the sensor has data, and read it every 2 seconds
   for {
     hasDataReady, err := co2sensor.HasDataReady()
     if err != nil {
@@ -98,7 +98,8 @@ func main() {
 ```
 
 This example was tested on [nRF52840](https://www.adafruit.com/product/4062)
-controller. Command to flash it with the:
+controller.
+Command to flash it:
 ```bash
 tinygo flash -target=feather-nrf52840 main.go
 ```
