@@ -20,10 +20,10 @@ document.
 ## Hardware details
 
 - driver communicates over I2C interface (address is `0x61`)
-- product page: [https://sensirion.com/products/catalog/SCD30/](https://sensirion.com/products/catalog/SCD30/)
-- datasheet: [https://sensirion.com/media/documents/4EAF6AF8/61652C3C/Sensirion_CO2_Sensors_SCD30_Datasheet.pdf](https://sensirion.com/media/documents/4EAF6AF8/61652C3C/Sensirion_CO2_Sensors_SCD30_Datasheet.pdf)
-- interface description: [https://sensirion.com/media/documents/D7CEEF4A/6165372F/Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf](https://sensirion.com/media/documents/D7CEEF4A/6165372F/Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf)
-- buy sensor from SparkFun: [https://www.sparkfun.com/products/15112](https://www.sparkfun.com/products/15112)
+- [product page](https://sensirion.com/products/catalog/SCD30/)
+- [datasheet](https://sensirion.com/media/documents/4EAF6AF8/61652C3C/Sensirion_CO2_Sensors_SCD30_Datasheet.pdf)
+- [interface description](https://sensirion.com/media/documents/D7CEEF4A/6165372F/Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf)
+- buy sensor from [SparkFun](https://www.sparkfun.com/products/15112).
 
 ## Example
 
@@ -108,16 +108,13 @@ tinygo flash -target=feather-nrf52840 main.go
 ```
 
 Show the output in the terminal:
-```
+```bash
 # find out dev to use
 ls -l /dev/cu.*
+
 # use `Control+A Control+\ y [Enter]` to exit
 screen /dev/cu.usbmodem144101 19200
 ```
-
-It prints out measurements read from the sensor:
-
-![screenshot of the console with measurement results](https://raw.githubusercontent.com/antonfisher/scd30/docs/images/example-console-output.jpg)
 
 For more configuration options see sensor's official interface description
 document and
