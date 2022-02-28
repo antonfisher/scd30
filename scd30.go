@@ -37,16 +37,6 @@ type Device struct {
 	bus I2C
 }
 
-// configure check connection to the sensor by requesting its software version
-func (d *Device) configure() (err error) {
-	_, err = d.GetSoftwareVersion()
-	if err != nil {
-		return fmt.Errorf("configure: failed to get software version: %w", err)
-	}
-
-	return nil
-}
-
 // readResponse writes IC2 command and reads result to the provided
 // response byte array
 func (d *Device) readResponse(command uint16, response []byte) (
@@ -337,13 +327,11 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 }
 
 // New create a new Sensirion SCD30 driver
-func New(bus I2C) (d Device, err error) {
+func New(bus I2C) (d Device) {
 	d = Device{
 		Address: I2C_ADDRESS,
 		bus:     bus,
 	}
 
-	err = d.configure()
-
-	return d, err
+	return d
 }

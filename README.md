@@ -57,11 +57,7 @@ func main() {
   }
 
   // Create driver for SCD30
-  co2sensor, err := scd30.New(bus)
-  if err != nil {
-    println("could not create driver:", err)
-    return
-  }
+  co2sensor := scd30.New(bus)
 
   // Read sensor's firmware version
   version, err := co2sensor.GetSoftwareVersion()
