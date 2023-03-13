@@ -56,10 +56,10 @@ func main() {
     return
   }
 
-  // Create driver for SCD30
+  // Create driver for SCD30.
   co2sensor := scd30.New(bus)
 
-  // Read sensor's firmware version
+  // Read sensor's firmware version.
   version, err := co2sensor.GetSoftwareVersion()
   if err != nil {
     println("failed to get software version:", err)
@@ -68,14 +68,14 @@ func main() {
   println("software version:", version)
 
   // Start continuous measurement without provided ambient pressure
-  // (should be ON by default on a new chip with 2 seconds interval)
+  // (should be ON by default on a new chip with 2 seconds interval).
   err = co2sensor.StartContinuousMeasurement(uint16(0))
   if err != nil {
     println("ERROR: co2 sensor: failed to trigger continuous measurement:", err)
     return
   }
 
-  // Check is the sensor has data, and read it every 2 seconds
+  // Check is the sensor has data, and read it every 2 seconds.
   for {
     hasDataReady, err := co2sensor.HasDataReady()
     if err != nil {

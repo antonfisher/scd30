@@ -2,7 +2,7 @@ package scd30
 
 import "fmt"
 
-// checkCRC8 checks CRC8 of a byte array assuming the last item is a checksum
+// checkCRC8 checks CRC8 of a byte array assuming the last item is a checksum.
 func checkCRC8(data []byte) error {
 	l := uint8(len(data))
 	expectedCRC := uint8(data[l-1])
@@ -19,7 +19,7 @@ func checkCRC8(data []byte) error {
 	return nil
 }
 
-// computeCRC8 computes CRC8 of the l first bytes of the given byte array
+// computeCRC8 computes CRC8 of the l first bytes of the given byte array.
 func computeCRC8(data []byte, l uint8) uint8 {
 	crc := uint8(0xFF)
 

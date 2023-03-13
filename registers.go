@@ -5,29 +5,29 @@ package scd30
 const (
 	I2C_ADDRESS uint8 = 0x61
 
-	// read commands:
+	// Read commands.
 	CMD_READ_VERSION     uint16 = 0xD100
 	CMD_READ_DATA_READY  uint16 = 0x0202
 	CMD_READ_MEASUREMENT uint16 = 0x0300
 
-	// write commands:
+	// Write commands.
 	CMD_SOFT_RESET                   uint16 = 0xD304
 	CMD_START_CONTINUOUS_MEASUREMENT uint16 = 0x0010
 	CMD_STOP_CONTINUOUS_MEASUREMENT  uint16 = 0x0104
 
-	// read/write commands:
+	// Read/write commands.
 	CMD_MEASUREMENT_INTERVAL       uint16 = 0x4600
 	CMD_ALTITUDE_COMPENSATION      uint16 = 0x5102
 	CMD_FORCED_RECALIBRATION_VALUE uint16 = 0x5204
 	CMD_SELF_CALIBRATION           uint16 = 0x5306
 	CMD_TEMPERATURE_OFFSET         uint16 = 0x5403
 
-	// responses:
+	// Responses.
 	HAS_DATA_READY            uint16 = 0x0001
 	SELF_CALIBRATION_ENABLED  uint16 = 0x0001
 	SELF_CALIBRATION_DISABLED uint16 = 0x0000
 
-	// command values:
+	// Command values.
 	STOP_CONTINUOUS_MEASUREMENT uint16 = 0x0001
 	RESET                       uint16 = 0x0001
 )

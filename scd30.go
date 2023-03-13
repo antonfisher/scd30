@@ -1,23 +1,17 @@
 // Package scd30 provides a Go/TinyGo driver for the Sensirion SCD30:
 // ambient CO2, humidity, and temperature sensor module.
 //
-// Driver works over I2C interface and supports all available commands listed
-// in the sensor's interface description document.
+// Driver works over the I2C interface and supports all available commands
+// listed in the official sensor's interface description document.
 //
-// Datasheet:
-//    https://sensirion.com/media/documents/4EAF6AF8/61652C3C/Sensirion_CO2_Sensors_SCD30_Datasheet.pdf
-//
-// Interface description:
-// 		https://sensirion.com/media/documents/D7CEEF4A/6165372F/Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
-//
-// Buy sensor:
-//		https://www.sparkfun.com/products/15112
+// Datasheet: https://sensirion.com/media/documents/4EAF6AF8/61652C3C/Sensirion_CO2_Sensors_SCD30_Datasheet.pdf
+// Interface description: https://sensirion.com/media/documents/D7CEEF4A/6165372F/Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
+// Buy sensor: https://www.sparkfun.com/products/15112
 //
 // This driver inspired by:
-//    - Sensirion's official driver: https://github.com/Sensirion/embedded-scd/
-//    - SparkFun SCD30 Arduino driver: https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
-//    - @pvainio's Go driver: https://github.com/pvainio/scd30
-//
+//   - Sensirion's official driver: https://github.com/Sensirion/embedded-scd/
+//   - SparkFun SCD30 Arduino driver: https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
+//   - @pvainio's Go driver: https://github.com/pvainio/scd30
 package scd30
 
 import (
@@ -37,8 +31,8 @@ type Device struct {
 	bus I2C
 }
 
-// readResponse writes IC2 command and reads result to the provided
-// response byte array
+// readResponse writes IC2 command and reads result to the provided response
+// byte array.
 func (d *Device) readResponse(command uint16, response []byte) (
 	err error,
 ) {
@@ -51,9 +45,10 @@ func (d *Device) readResponse(command uint16, response []byte) (
 		return fmt.Errorf("failed to send data: %w", err)
 	}
 
-	// From the interface description document: clock stretching period in write-
-	// and read-frames is 30ms, however, due to internal calibration processes
-	// a maximal clock stretching of 150 ms may occur once per day.
+	// From the interface description document:
+	// >> clock stretching period in write- and read-frames is 30ms, however, due
+	// >> to internal calibration processes a maximal clock stretching of 150 ms
+	// >> may occur once per day.
 	time.Sleep(30 * time.Millisecond)
 
 	err = d.bus.Tx(uint16(d.Address), []byte{}, response)
@@ -65,7 +60,7 @@ func (d *Device) readResponse(command uint16, response []byte) (
 }
 
 // readAndCheckResponse reads the register and checks CRC8 of the response
-// assuming the last byte is CRC8 checksum
+// assuming the last byte is CRC8 checksum.
 func (d *Device) readAndCheckResponse(command uint16, response []byte) (
 	err error,
 ) {
@@ -83,7 +78,7 @@ func (d *Device) readAndCheckResponse(command uint16, response []byte) (
 	return checkCRC8(response)
 }
 
-// writeValue writes setting value for the provided command
+// writeValue writes setting value for the provided command.
 func (d *Device) writeValue(command, value uint16) (err error) {
 	err = d.bus.Tx(
 		uint16(d.Address),
@@ -103,8 +98,13 @@ func (d *Device) writeValue(command, value uint16) (err error) {
 	return nil
 }
 
+// SoftReset resets the sensor.
+func (d *Device) SoftReset() error {
+	return d.writeValue(CMD_SOFT_RESET, RESET)
+}
+
 // GetSoftwareVersion reads software version of the connected device as
-// a "major.minor" string
+// a "major.minor" string.
 func (d *Device) GetSoftwareVersion() (version string, err error) {
 	result := make([]byte, 3)
 
@@ -116,12 +116,7 @@ func (d *Device) GetSoftwareVersion() (version string, err error) {
 	return fmt.Sprintf("%d.%d", result[0], result[1]), nil
 }
 
-// SoftReset resets the sensor
-func (d *Device) SoftReset() error {
-	return d.writeValue(CMD_SOFT_RESET, RESET)
-}
-
-// GetMeasurementInterval returns current measurement interval [2-1800]s
+// GetMeasurementInterval returns current measurement interval [2-1800]s.
 func (d *Device) GetMeasurementInterval() (interval uint16, err error) {
 	result := make([]byte, 3)
 
@@ -135,7 +130,7 @@ func (d *Device) GetMeasurementInterval() (interval uint16, err error) {
 	return interval, nil
 }
 
-// SetMeasurementInterval sets measurement interval, must be [2-1800]s
+// SetMeasurementInterval sets measurement interval, must be [2-1800]s.
 func (d *Device) SetMeasurementInterval(interval uint16) error {
 	if interval < 2 || interval > 1800 {
 		return fmt.Errorf(
@@ -161,11 +156,12 @@ func (d *Device) GetSelfCalibration() (enabled bool, err error) {
 }
 
 // SetSelfCalibration enables/disables automatic self-calibration feature (ASC).
+//
 // From the docs:
-// To work properly SCD30 has to see fresh air on a regular basis. Optimal
-// working conditions are given when the sensor sees fresh air for one hour
-// every day so that ASC can constantly re-calibrate. ASC only works in
-// continuous measurement mode.
+// >> To work properly SCD30 has to see fresh air on a regular basis. Optimal
+// >> working conditions are given when the sensor sees fresh air for one hour
+// >> every day so that ASC can constantly re-calibrate. ASC only works in
+// >> continuous measurement mode.
 func (d *Device) SetSelfCalibration(enabled bool) error {
 	if enabled {
 		return d.writeValue(CMD_SELF_CALIBRATION, SELF_CALIBRATION_ENABLED)
@@ -174,7 +170,7 @@ func (d *Device) SetSelfCalibration(enabled bool) error {
 	return d.writeValue(CMD_SELF_CALIBRATION, SELF_CALIBRATION_DISABLED)
 }
 
-// GetForcedRecalibrationValue returns value if set [400-2000ppm]
+// GetForcedRecalibrationValue returns value if set [400-2000ppm].
 func (d *Device) GetForcedRecalibrationValue() (value uint16, err error) {
 	result := make([]byte, 3)
 
@@ -202,7 +198,7 @@ func (d *Device) SetForcedRecalibrationValue(value uint16) error {
 }
 
 // GetTemperatureOffset returns value of the configured temperature offset in
-// 1/100 °C
+// 1/100 °C.
 func (d *Device) GetTemperatureOffset() (offset uint16, err error) {
 	result := make([]byte, 3)
 
@@ -216,13 +212,13 @@ func (d *Device) GetTemperatureOffset() (offset uint16, err error) {
 	return offset, nil
 }
 
-// SetTemperatureOffset sets temperature offset in 1/100 °C
+// SetTemperatureOffset sets temperature offset in 1/100 °C.
 func (d *Device) SetTemperatureOffset(offset uint16) error {
 	return d.writeValue(CMD_TEMPERATURE_OFFSET, offset)
 }
 
-// GetAltitudeCompensation returns value of the configured altitude compensation
-// in meters above the sea level
+// GetAltitudeCompensation returns value of the configured altitude
+// compensation in meters above the sea level.
 func (d *Device) GetAltitudeCompensation() (altitude uint16, err error) {
 	result := make([]byte, 3)
 
@@ -237,13 +233,13 @@ func (d *Device) GetAltitudeCompensation() (altitude uint16, err error) {
 }
 
 // SetAltitudeCompensation sets altitude compensation in meters above the sea
-// level
+// level.
 func (d *Device) SetAltitudeCompensation(altitude uint16) error {
 	return d.writeValue(CMD_ALTITUDE_COMPENSATION, altitude)
 }
 
 // StartContinuousMeasurement enables continuous measurement with provided
-// ambient pressure: [700-1200]mBar or 0 (disabled)
+// ambient pressure: [700-1200]mBar or 0 (disabled).
 func (d *Device) StartContinuousMeasurement(ambientPressure uint16) error {
 	if ambientPressure != 0 && (ambientPressure < 700 || ambientPressure > 1200) {
 		return fmt.Errorf(
@@ -255,7 +251,7 @@ func (d *Device) StartContinuousMeasurement(ambientPressure uint16) error {
 	return d.writeValue(CMD_START_CONTINUOUS_MEASUREMENT, ambientPressure)
 }
 
-// StopContinuousMeasurement stops continuous measurement
+// StopContinuousMeasurement stops continuous measurement.
 func (d *Device) StopContinuousMeasurement() error {
 	return d.writeValue(
 		CMD_STOP_CONTINUOUS_MEASUREMENT,
@@ -263,7 +259,7 @@ func (d *Device) StopContinuousMeasurement() error {
 	)
 }
 
-// HasDataReady returns true if there are measurements ready to be read
+// HasDataReady returns true if there are measurements ready to be read.
 func (d *Device) HasDataReady() (isReady bool, err error) {
 	result := make([]byte, 3)
 
@@ -275,7 +271,7 @@ func (d *Device) HasDataReady() (isReady bool, err error) {
 	return uint16(result[1]) == HAS_DATA_READY, nil
 }
 
-// ReadMeasurement reads measurements from the device
+// ReadMeasurement reads measurements from the device.
 func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 	result := make([]byte, 18)
 
@@ -326,7 +322,7 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 	return measurement, nil
 }
 
-// New create a new Sensirion SCD30 driver
+// New create a new Sensirion SCD30 driver.
 func New(bus I2C) (d Device) {
 	d = Device{
 		Address: I2C_ADDRESS,

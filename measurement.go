@@ -2,7 +2,7 @@ package scd30
 
 import "fmt"
 
-// Measurement is a result of the measurement read from the device
+// Measurement is a result of the measurement read from the device.
 type Measurement struct {
 	CO2         float32 // PPM [0 – 10000]
 	Temperature float32 // °C  [-40 – 125]
