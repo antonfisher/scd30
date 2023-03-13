@@ -25,6 +25,12 @@ import (
 type Device struct {
 	Address uint8
 
+	// From the interface description document:
+	// >> clock stretching period in write- and read-frames is 30ms, however, due
+	// >> to internal calibration processes a maximal clock stretching of 150 ms
+	// >> may occur once per day.
+	ClockStretching time.Duration
+
 	// Maximal I2C speed is 100 kHz and the master has to support clock
 	// stretching. Sensirion recommends to operate the SCD30 at a baud rate
 	// of 50 kHz or smaller.
@@ -45,11 +51,7 @@ func (d *Device) readResponse(command uint16, response []byte) (
 		return fmt.Errorf("failed to send data: %w", err)
 	}
 
-	// From the interface description document:
-	// >> clock stretching period in write- and read-frames is 30ms, however, due
-	// >> to internal calibration processes a maximal clock stretching of 150 ms
-	// >> may occur once per day.
-	time.Sleep(30 * time.Millisecond)
+	time.Sleep(d.ClockStretching)
 
 	err = d.bus.Tx(uint16(d.Address), []byte{}, response)
 	if err != nil {
@@ -326,7 +328,9 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 func New(bus I2C) (d Device) {
 	d = Device{
 		Address: I2C_ADDRESS,
-		bus:     bus,
+		// Manual testing shows that 150ms is probably the most stable default.
+		ClockStretching: 150 * time.Millisecond,
+		bus:             bus,
 	}
 
 	return d
