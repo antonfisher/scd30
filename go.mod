@@ -1,3 +1,3 @@
 module github.com/antonfisher/scd30
 
-go 1.17
+go 1.20
