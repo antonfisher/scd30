@@ -273,15 +273,17 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 	// humidity, each has: 4 bytes of the value + 2 CRC8's for every bytes couple.
 	// Values come in BigEndian notation.
 	//
-	//                      CRC8
-	//       + - - + - - - + - - + - - - + - - +
-	//       |     |       |     |       |     |
-	//       v     v       v     v       v     v
+	//     Value
+	//   + + - + +
+	//   | |   | |          CRC8
+	//   | | + - - + - - - + - - + - - - + - - +
+	//   | | | | | |       |     |       |     |
+	//   v v v v v v       v     v       v     v
 	// +-------------+-------------+-------------+
 	// | X X C X X C | X X C X X C | X X C X X C |
 	// +-------------+-------------+-------------+
-	// |             |             |             |
 	// |     CO2     | Temperature |  Humidity   |
+	// +-------------+-------------+-------------+
 	//
 	i := 0
 	chunk := make([]byte, 3)     // 2 data bytes + 1 CRC8
