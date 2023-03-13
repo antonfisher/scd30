@@ -5,6 +5,7 @@ changelog-install:
 .PHONY: changelog-install
 
 changelog:
+	@echo "Run like 'git tag vX.X.X' to create a tag first\r"
 	@echo "Updating CHANGELOG...\r"
 	git-chglog --output CHANGELOG.md
 .PHONY: changelog
