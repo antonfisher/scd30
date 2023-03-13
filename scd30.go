@@ -35,6 +35,9 @@ type Device struct {
 	// stretching. Sensirion recommends to operate the SCD30 at a baud rate
 	// of 50 kHz or smaller.
 	bus I2C
+
+	// Holds the latest response for the sensor.
+	res []byte
 }
 
 // readResponse writes IC2 command and reads result to the provided response
@@ -108,26 +111,22 @@ func (d *Device) SoftReset() error {
 // GetSoftwareVersion reads software version of the connected device as
 // a "major.minor" string.
 func (d *Device) GetSoftwareVersion() (version string, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_READ_VERSION, result)
+	err = d.readAndCheckResponse(CMD_READ_VERSION, d.res[0:3])
 	if err != nil {
 		return version, err
 	}
 
-	return fmt.Sprintf("%d.%d", result[0], result[1]), nil
+	return fmt.Sprintf("%d.%d", d.res[0], d.res[1]), nil
 }
 
 // GetMeasurementInterval returns current measurement interval [2-1800]s.
 func (d *Device) GetMeasurementInterval() (interval uint16, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_MEASUREMENT_INTERVAL, result)
+	err = d.readAndCheckResponse(CMD_MEASUREMENT_INTERVAL, d.res[0:3])
 	if err != nil {
 		return interval, err
 	}
 
-	interval = uint16(result[0])<<8 | uint16(result[1])
+	interval = uint16(d.res[0])<<8 | uint16(d.res[1])
 
 	return interval, nil
 }
@@ -147,14 +146,12 @@ func (d *Device) SetMeasurementInterval(interval uint16) error {
 // GetSelfCalibration returns enabled/disabled state of automatic
 // self-calibration feature (ASC).
 func (d *Device) GetSelfCalibration() (enabled bool, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_SELF_CALIBRATION, result)
+	err = d.readAndCheckResponse(CMD_SELF_CALIBRATION, d.res[0:3])
 	if err != nil {
 		return enabled, err
 	}
 
-	return uint16(result[1]) == SELF_CALIBRATION_ENABLED, nil
+	return uint16(d.res[1]) == SELF_CALIBRATION_ENABLED, nil
 }
 
 // SetSelfCalibration enables/disables automatic self-calibration feature (ASC).
@@ -174,14 +171,12 @@ func (d *Device) SetSelfCalibration(enabled bool) error {
 
 // GetForcedRecalibrationValue returns value if set [400-2000ppm].
 func (d *Device) GetForcedRecalibrationValue() (value uint16, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_FORCED_RECALIBRATION_VALUE, result)
+	err = d.readAndCheckResponse(CMD_FORCED_RECALIBRATION_VALUE, d.res[0:3])
 	if err != nil {
 		return value, err
 	}
 
-	value = uint16(result[0])<<8 | uint16(result[1])
+	value = uint16(d.res[0])<<8 | uint16(d.res[1])
 
 	return value, nil
 }
@@ -202,14 +197,12 @@ func (d *Device) SetForcedRecalibrationValue(value uint16) error {
 // GetTemperatureOffset returns value of the configured temperature offset in
 // 1/100 °C.
 func (d *Device) GetTemperatureOffset() (offset uint16, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_TEMPERATURE_OFFSET, result)
+	err = d.readAndCheckResponse(CMD_TEMPERATURE_OFFSET, d.res[0:3])
 	if err != nil {
 		return offset, err
 	}
 
-	offset = uint16(result[0])<<8 | uint16(result[1])
+	offset = uint16(d.res[0])<<8 | uint16(d.res[1])
 
 	return offset, nil
 }
@@ -222,14 +215,12 @@ func (d *Device) SetTemperatureOffset(offset uint16) error {
 // GetAltitudeCompensation returns value of the configured altitude
 // compensation in meters above the sea level.
 func (d *Device) GetAltitudeCompensation() (altitude uint16, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_ALTITUDE_COMPENSATION, result)
+	err = d.readAndCheckResponse(CMD_ALTITUDE_COMPENSATION, d.res[0:3])
 	if err != nil {
 		return altitude, err
 	}
 
-	altitude = uint16(result[0])<<8 | uint16(result[1])
+	altitude = uint16(d.res[0])<<8 | uint16(d.res[1])
 
 	return altitude, nil
 }
@@ -263,21 +254,17 @@ func (d *Device) StopContinuousMeasurement() error {
 
 // HasDataReady returns true if there are measurements ready to be read.
 func (d *Device) HasDataReady() (isReady bool, err error) {
-	result := make([]byte, 3)
-
-	err = d.readAndCheckResponse(CMD_READ_DATA_READY, result)
+	err = d.readAndCheckResponse(CMD_READ_DATA_READY, d.res[0:3])
 	if err != nil {
 		return false, err
 	}
 
-	return uint16(result[1]) == HAS_DATA_READY, nil
+	return uint16(d.res[1]) == HAS_DATA_READY, nil
 }
 
 // ReadMeasurement reads measurements from the device.
 func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
-	result := make([]byte, 18)
-
-	err = d.readResponse(CMD_READ_MEASUREMENT, result)
+	err = d.readResponse(CMD_READ_MEASUREMENT, d.res)
 	if err != nil {
 		return measurement, err
 	}
@@ -303,15 +290,15 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 	for v := 0; v < len(values); v++ {
 		value = 0
 		for c := 0; c < 2; c++ { // 2 chunks per one value
-			chunk[0], chunk[1], chunk[2] = result[i], result[i+1], result[i+2]
+			chunk[0], chunk[1], chunk[2] = d.res[i], d.res[i+1], d.res[i+2]
 			err = checkCRC8(chunk)
 			if err != nil {
 				return measurement, err
 			}
 			value <<= 8
-			value |= uint32(result[i])
+			value |= uint32(d.res[i])
 			value <<= 8
-			value |= uint32(result[i+1])
+			value |= uint32(d.res[i+1])
 			i += 3
 		}
 		values[v] = math.Float32frombits(value)
@@ -328,9 +315,12 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 func New(bus I2C) (d Device) {
 	d = Device{
 		Address: I2C_ADDRESS,
+
 		// Manual testing shows that 150ms is probably the most stable default.
 		ClockStretching: 150 * time.Millisecond,
-		bus:             bus,
+
+		bus: bus,
+		res: make([]byte, 18),
 	}
 
 	return d
