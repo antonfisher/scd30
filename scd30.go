@@ -36,8 +36,12 @@ type Device struct {
 	// of 50 kHz or smaller.
 	bus I2C
 
-	// Holds the latest response for the sensor.
+	// Holds the latest response for the sensor. Should be 18 bytes.
 	res []byte
+
+	// Holds a chunk of the latest measurement response data from the server.
+	// Should be 3 bytes: 2 data bytes + 1 CRC8 byte.
+	chunk []byte
 }
 
 // readResponse writes IC2 command and reads result to the provided response
@@ -284,16 +288,16 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 	// +-------------+-------------+-------------+
 	// |     CO2     | Temperature |  Humidity   |
 	// +-------------+-------------+-------------+
+	// |               Measurement               |
+	// +-------------+-------------+-------------+
 	//
 	i := 0
-	chunk := make([]byte, 3)     // 2 data bytes + 1 CRC8
-	var value uint32             // 4 bytes of a single measurement
-	values := make([]float32, 3) // all 3 measurements as floats
-	for v := 0; v < len(values); v++ {
+	var value uint32 // 4 bytes of a single measurement
+	for m := 0; m < 3; m++ {
 		value = 0
 		for c := 0; c < 2; c++ { // 2 chunks per one value
-			chunk[0], chunk[1], chunk[2] = d.res[i], d.res[i+1], d.res[i+2]
-			err = checkCRC8(chunk)
+			d.chunk[0], d.chunk[1], d.chunk[2] = d.res[i], d.res[i+1], d.res[i+2]
+			err = checkCRC8(d.chunk[0:3])
 			if err != nil {
 				return measurement, err
 			}
@@ -303,12 +307,14 @@ func (d *Device) ReadMeasurement() (measurement Measurement, err error) {
 			value |= uint32(d.res[i+1])
 			i += 3
 		}
-		values[v] = math.Float32frombits(value)
+		if m == 0 { // first measurement in the response -- CO2
+			measurement.CO2 = math.Float32frombits(value)
+		} else if m == 1 { // second measurement in the response -- temperature
+			measurement.Temperature = math.Float32frombits(value)
+		} else if m == 2 { // third measurement in the response -- humidity
+			measurement.Humidity = math.Float32frombits(value)
+		}
 	}
-
-	measurement.CO2 = values[0]
-	measurement.Temperature = values[1]
-	measurement.Humidity = values[2]
 
 	return measurement, nil
 }
@@ -321,8 +327,9 @@ func New(bus I2C) (d Device) {
 		// Manual testing shows that 150ms is probably the most stable default.
 		ClockStretching: 150 * time.Millisecond,
 
-		bus: bus,
-		res: make([]byte, 18),
+		bus:   bus,
+		res:   make([]byte, 18), // max size is 18 bytes to hold the measurement
+		chunk: make([]byte, 3),  // chunk of a measurement: 2 data bytes + 1 CRC8
 	}
 
 	return d
